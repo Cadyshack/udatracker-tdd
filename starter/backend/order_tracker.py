@@ -14,7 +14,17 @@ class OrderTracker:
         self.storage = storage
 
     def add_order(self, order_id: str, item_name: str, quantity: int, customer_id: str, status: str = "pending"):
-        pass
+        if self.storage.get_order(order_id):
+            raise ValueError(f"Order with ID '{order_id}' already exists.")
+        
+        order = {
+            "order_id": order_id,
+            "item_name": item_name,
+            "quantity": quantity,
+            "customer_id": customer_id,
+            "status": status
+        }
+        self.storage.save_order(order_id, order)
 
     def get_order_by_id(self, order_id: str):
         pass
