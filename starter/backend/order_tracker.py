@@ -17,6 +17,16 @@ class OrderTracker:
         if self.storage.get_order(order_id):
             raise ValueError(f"Order with ID '{order_id}' already exists.")
         
+        required_fields = {
+            "order_id": order_id,
+            "item_name": item_name,
+            "quantity": quantity,
+            "customer_id": customer_id
+        }
+        missing_fields = [name for name, value in required_fields.items() if value is None]
+        if missing_fields:
+            raise ValueError(f"Missing required field(s): {', '.join(missing_fields)}")
+
         order = {
             "order_id": order_id,
             "item_name": item_name,
