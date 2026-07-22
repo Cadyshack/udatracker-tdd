@@ -16,7 +16,26 @@ def serve_static(filename):
 
 @app.route('/api/orders', methods=['POST'])
 def add_order_api():
-    pass
+    data = request.get_json()
+    #  --- 400 Bad Request: validate input first ---
+    if not data or not all(k in data for k in ("order_id", "item_name", "quantity", "customer_id")):
+        return jsonify({"error": "order_id, item_name, quantity, and customer_id are required"}), 400
+
+    # --- 409 Conflict: duplicate order_id ---
+    try:
+        order_tracker.add_order(
+            order_id=data["order_id"],
+            item_name=data["item_name"],
+            quantity=data["quantity"],
+            customer_id=data["customer_id"],
+            status=data.get("status", "pending"),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 409
+
+    # --- happy path: 201 Created ---
+    created_order = order_tracker.get_order_by_id(data["order_id"])
+    return jsonify(created_order), 201
 
 @app.route('/api/orders/<string:order_id>', methods=['GET'])
 def get_order_api(order_id):
