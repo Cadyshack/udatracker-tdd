@@ -167,3 +167,63 @@ def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_d
     #Assert
     assert all_orders == order_data
     mock_storage.get_all_orders.assert_called_once()
+
+# ------ list_orders_by_status ------
+@pytest.mark.parametrize(
+    "status, expected_result",
+    [
+        (
+            "pending",
+            {
+                "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"}
+            }
+        ),
+        (
+            "shipped",
+            {
+                "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
+            }
+        ),
+        (
+            "processing",
+            {}
+        )
+    ]
+)
+def test_list_orders_by_status_successfully(order_tracker, mock_storage, status, expected_result):
+    """Test list_orders_by_status successfully returns dict that includes only orders with specific status"""
+    #Arrange
+    orders_data = {
+        "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"},
+        "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
+    }
+    mock_storage.get_all_orders.return_value = orders_data
+
+    #Act
+    filtered_orders = order_tracker.list_orders_by_status(status)
+
+    #Assert
+    assert filtered_orders == expected_result
+    mock_storage.get_all_orders.assert_called_once()
+
+def test_list_orders_by_status_empty_storage(order_tracker, mock_storage):
+    """Test list_orders_by_status returns empty dict if storage is empty"""
+    #Arrange
+    mock_storage.get_all_orders.return_value = {}
+
+    #Act
+    filtered_orders = order_tracker.list_orders_by_status("pending")
+
+    #Assert
+    assert filtered_orders == {}
+    mock_storage.get_all_orders.assert_called_once()
+
+def test_list_orders_by_status_raises_error_if_empty_string_for_status(order_tracker):
+    """Test that ValueError is raised if we use an empty string for the status"""
+    with pytest.raises(ValueError, match="Cannot use an empty string as status argument."):
+        order_tracker.list_orders_by_status("")
+
+def test_list_orders_by_status_raises_error_if_invalid_status(order_tracker):
+    """Test that a ValueError is raises if we use invalid status for filtering"""
+    with pytest.raises(ValueError, match=r"Invalid status 'invalid_status'\. Must be one of:.*"):
+            order_tracker.list_orders_by_status("invalid_status")

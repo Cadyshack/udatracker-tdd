@@ -62,4 +62,12 @@ class OrderTracker:
         return self.storage.get_all_orders()
 
     def list_orders_by_status(self, status: str):
-        pass
+        valid_status = ["pending", "processing", "shipped", "delivered", "cancelled"]
+        if not status:
+             raise ValueError("Cannot use an empty string as status argument.")
+        elif status not in valid_status:
+            raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(valid_status)}")
+        
+        all_orders = self.storage.get_all_orders()
+        filtered_orders = {k: v.copy() for k, v in all_orders.items() if v["status"] == status}
+        return filtered_orders
