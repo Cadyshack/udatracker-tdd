@@ -36,8 +36,11 @@ class OrderTracker:
         }
         self.storage.save_order(order_id, order)
 
-    def get_order_by_id(self, order_id: str):
-        pass
+    def get_order_by_id(self, order_id: str) -> dict | None:
+        if not isinstance(order_id, str) or not order_id:
+            raise ValueError("order_id must be a non-empty string.")
+        
+        return self.storage.get_order(order_id)
 
     def update_order_status(self, order_id: str, new_status: str):
         pass
