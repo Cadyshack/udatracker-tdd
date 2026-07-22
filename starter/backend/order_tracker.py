@@ -43,7 +43,20 @@ class OrderTracker:
         return self.storage.get_order(order_id)
 
     def update_order_status(self, order_id: str, new_status: str):
-        pass
+        valid_status = ["pending", "processing", "shipped", "delivered", "cancelled"]
+        if new_status not in valid_status:
+            raise ValueError(f"Invalid status '{new_status}'. Must be one of: {', '.join(valid_status)}")
+
+        if not isinstance(order_id, str) or not order_id:
+                    raise ValueError("order_id must be a non-empty string.")
+        
+        order = self.storage.get_order(order_id)
+        if order is None:
+            raise ValueError(f"Order with ID '{order_id}' not found.")
+        
+        order["status"] = new_status
+        self.storage.save_order(order_id, order)
+
 
     def list_all_orders(self):
         pass

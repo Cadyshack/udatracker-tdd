@@ -27,7 +27,7 @@ def order_tracker(mock_storage):
 
 # --- Unit Tests Below ---
 
-# add_order tests
+# ------ add_order tests ------
 def test_add_order_successfully(order_tracker, mock_storage):
     """Tests adding a new order with default 'pending' status."""
     order_tracker.add_order("ORD001", "Laptop", 1, "CUST001")
@@ -63,7 +63,7 @@ def test_add_order_raises_error_if_missing_field(order_tracker, mock_storage, fi
     
     mock_storage.save_order.assert_not_called()
 
-# get_order_by_id tests
+# ------ get_order_by_id tests ------
 def test_get_order_by_id_successfully(order_tracker, mock_storage):
     """Happy path test that getting an order that exists returns the proper order information"""
     #Arrange
@@ -103,3 +103,44 @@ def test_get_order_by_id_raises_error_if_wrong_or_empty_id_field(order_tracker, 
     """Test that ValueErrror is raised when getting order with empty string or wrong type used for order_id argument"""
     with pytest.raises(ValueError, match=r"order_id must be a non-empty string\."):
         order_tracker.get_order_by_id(order_id)
+
+# ------ update_order_status tests ------
+def test_update_order_status_successfully(order_tracker, mock_storage):
+    """Test update order status successfully updates the status"""
+    #Arrange
+    order_data_before_update = {
+        "order_id": "ORD004",
+        "item_name": "Pillow",
+        "quantity": 2,
+        "customer_id": "CUST003",
+        "status": "pending"
+    }
+    mock_storage.get_order.return_value = order_data_before_update
+
+    order_data_after_update = {**order_data_before_update, "status": "processing"}
+
+    #Act
+    order_tracker.update_order_status("ORD004", "processing")
+
+    #Assert
+    mock_storage.get_order.assert_called_once_with("ORD004")
+    mock_storage.save_order.assert_called_once_with("ORD004", order_data_after_update)
+
+def test_update_order_status_raises_error_if_invalid_status_used(order_tracker):
+    """Test that ValueError is raised when an invalid status is used for updating order status"""
+    with pytest.raises(ValueError, match=r"Invalid status 'invalid_status'\. Must be one of: .*"):
+        order_tracker.update_order_status("ORD004", "invalid_status")
+
+def test_update_order_status_raises_error_if_order_does_not_exist(order_tracker, mock_storage):
+    """Test that ValueError is raised when trying to update the status of an order that doesn't exist in storage"""
+    #Arrange
+    mock_storage.get_order.return_value = None
+
+    #Act/Assert
+    with pytest.raises(ValueError, match=r"Order with ID 'ORD004' not found\."):
+        order_tracker.update_order_status("ORD004", "shipped")
+
+def test_update_order_status_raises_error_using_empty_string(order_tracker, mock_storage):
+    """Test that ValueError is raised when an empty string is used for order_id"""
+    with pytest.raises(ValueError, match=r"order_id must be a non-empty string\."):
+        order_tracker.update_order_status("", "shipped")
