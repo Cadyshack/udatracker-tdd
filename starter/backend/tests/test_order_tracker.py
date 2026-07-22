@@ -144,3 +144,26 @@ def test_update_order_status_raises_error_using_empty_string(order_tracker, mock
     """Test that ValueError is raised when an empty string is used for order_id"""
     with pytest.raises(ValueError, match=r"order_id must be a non-empty string\."):
         order_tracker.update_order_status("", "shipped")
+
+# ------ list_all_orders tests ------
+@pytest.mark.parametrize(
+        "order_data",
+        [
+            {
+                "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"},
+                "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
+            },
+            {}
+        ]
+)
+def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_data):
+    """Test that all orders are returned as a dict mapping order_id --> order dict, or an empty dict if no orders in storage"""
+    #Arrange
+    mock_storage.get_all_orders.return_value = order_data
+
+    #Act
+    all_orders = order_tracker.list_all_orders()
+
+    #Assert
+    assert all_orders == order_data
+    mock_storage.get_all_orders.assert_called_once()
