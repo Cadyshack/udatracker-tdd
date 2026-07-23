@@ -77,6 +77,47 @@ def test_add_order_raises_error_if_invalid_status(order_tracker, mock_storage):
 
     mock_storage.save_order.assert_not_called()
 
+@pytest.mark.parametrize(
+        "field_name",
+        ["order_id", "item_name", "customer_id"]
+)
+def test_add_order_raises_error_if_blank_string_field(order_tracker, mock_storage, field_name):
+    """Tests that a whitespace-only required string field is treated as missing"""
+
+    order_data = {
+        "order_id": "ORD002",
+        "item_name": "Mobile Phone",
+        "quantity": 1,
+        "customer_id": "CUST001"
+    }
+    order_data[field_name] = "   "
+
+    with pytest.raises(ValueError, match="Missing required field"):
+        order_tracker.add_order(**order_data)
+
+    mock_storage.save_order.assert_not_called()
+
+@pytest.mark.parametrize(
+        "quantity",
+        [0, -1, "5", 1.5, True]
+)
+def test_add_order_raises_error_if_quantity_not_positive_integer(order_tracker, mock_storage, quantity):
+    """Tests that quantity must be a positive integer (rejecting zero, negatives, non-ints, and bools)"""
+
+    order_data = {
+        "order_id": "ORD002",
+        "item_name": "Mobile Phone",
+        "quantity": quantity,
+        "customer_id": "CUST001"
+    }
+
+    with pytest.raises(ValueError, match="quantity must be a positive integer"):
+        order_tracker.add_order(**order_data)
+
+    mock_storage.save_order.assert_not_called()
+
+
+
 # ------ get_order_by_id tests ------
 def test_get_order_by_id_successfully(order_tracker, mock_storage):
     """Happy path test that getting an order that exists returns the proper order information"""

@@ -18,16 +18,23 @@ class OrderTracker:
         """Create and store a new order, raising ValueError on duplicate ID, missing fields, or invalid status."""
         if self.storage.get_order(order_id):
             raise ValueError(f"Order with ID '{order_id}' already exists.")
-        
+        # Check for missing fields and raise error if missing
         required_fields = {
             "order_id": order_id,
             "item_name": item_name,
             "quantity": quantity,
             "customer_id": customer_id
         }
-        missing_fields = [name for name, value in required_fields.items() if value is None]
+        missing_fields = [
+            name for name, value in required_fields.items()
+            if value is None or (isinstance(value, str) and not value.strip())
+            ]
         if missing_fields:
             raise ValueError(f"Missing required field(s): {', '.join(missing_fields)}")
+
+        # Check quantity is a positive integer
+        if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity <= 0:
+            raise ValueError(f"quantity must be a positive integer, got '{quantity}'.")
 
         if status not in self.valid_status:
             raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(self.valid_status)}")
