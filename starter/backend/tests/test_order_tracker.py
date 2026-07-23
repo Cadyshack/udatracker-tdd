@@ -63,6 +63,20 @@ def test_add_order_raises_error_if_missing_field(order_tracker, mock_storage, fi
     
     mock_storage.save_order.assert_not_called()
 
+def test_add_order_raises_error_if_invalid_status(order_tracker, mock_storage):
+    """Test that only orders with valid status field can be added"""
+    order_data = {
+        "order_id": "ORD002",
+        "item_name": "Mobile Phone",
+        "quantity": 1,
+        "customer_id": "CUST001",
+        "status": "banana"
+    }
+    with pytest.raises(ValueError, match=r"Invalid status 'banana'\. Must be one of: .*"):
+        order_tracker.add_order(**order_data)
+
+    mock_storage.save_order.assert_not_called()
+
 # ------ get_order_by_id tests ------
 def test_get_order_by_id_successfully(order_tracker, mock_storage):
     """Happy path test that getting an order that exists returns the proper order information"""
@@ -227,3 +241,12 @@ def test_list_orders_by_status_raises_error_if_invalid_status(order_tracker):
     """Test that a ValueError is raises if we use invalid status for filtering"""
     with pytest.raises(ValueError, match=r"Invalid status 'invalid_status'\. Must be one of:.*"):
             order_tracker.list_orders_by_status("invalid_status")
+
+@pytest.mark.parametrize(
+    "status",
+    [None, 123, ["pending"], {"status": "pending"}]
+)
+def test_list_orders_by_status_raises_error_if_wrong_type(order_tracker, status):
+    """Test that ValueError is raised when status is not a string"""
+    with pytest.raises(ValueError, match="Cannot use an empty string as status argument."):
+        order_tracker.list_orders_by_status(status)
