@@ -16,6 +16,7 @@ def serve_static(filename):
 
 @app.route('/api/orders', methods=['POST'])
 def add_order_api():
+    """Add a new order to the system."""
     data = request.get_json()
     #  --- 400 Bad Request: validate input first ---
     if not data or not all(k in data for k in ("order_id", "item_name", "quantity", "customer_id")):
@@ -39,15 +40,38 @@ def add_order_api():
 
 @app.route('/api/orders/<string:order_id>', methods=['GET'])
 def get_order_api(order_id):
-    pass
+    """Retrieve an order by its ID."""
+    order = order_tracker.get_order_by_id(order_id)
+    # --- 404 Not Found: order doesn't exist ---
+    if order is None:
+        return jsonify({"error": f"{order_id} does not exist."}), 404
+    # --- happy path: 200 OK response ---
+    return jsonify(order), 200
 
 @app.route('/api/orders/<string:order_id>/status', methods=['PUT'])
 def update_order_status_api(order_id):
-    pass
+    """Update the status of an existing order."""
+    data = request.get_json()
+    # Check if missing request body or request body doesn't have "new_status" key
+    if not data or "new_status" not in data:
+        return jsonify({"error": "new_status is required"}), 400
+    
+    new_status = data["new_status"]
+
+    try:
+        order_tracker.update_order_status(order_id, new_status)
+    except ValueError as e:
+        if "Invalid status" in str(e):
+            return jsonify({"error": str(e)}), 400
+        else:
+            return jsonify({"error": str(e)}), 404
+
+    updated_order = order_tracker.get_order_by_id(order_id)
+    return jsonify(updated_order), 200    
 
 @app.route('/api/orders', methods=['GET'])
 def list_orders_api():
-    pass
+    
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=True)
