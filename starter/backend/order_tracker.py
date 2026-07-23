@@ -42,7 +42,7 @@ class OrderTracker:
         
         return self.storage.get_order(order_id) # returns None when absent
 
-    def update_order_status(self, order_id: str, new_status: str):
+    def update_order_status(self, order_id: str, new_status: str) -> None:
         valid_status = ["pending", "processing", "shipped", "delivered", "cancelled"]
         if new_status not in valid_status:
             raise ValueError(f"Invalid status '{new_status}'. Must be one of: {', '.join(valid_status)}")
@@ -61,9 +61,9 @@ class OrderTracker:
     def list_all_orders(self) -> dict:
         return self.storage.get_all_orders()
 
-    def list_orders_by_status(self, status: str):
+    def list_orders_by_status(self, status: str) -> dict:
         valid_status = ["pending", "processing", "shipped", "delivered", "cancelled"]
-        if not status:
+        if not status.strip():
              raise ValueError("Cannot use an empty string as status argument.")
         elif status not in valid_status:
             raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(valid_status)}")

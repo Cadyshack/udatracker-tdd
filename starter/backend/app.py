@@ -71,7 +71,17 @@ def update_order_status_api(order_id):
 
 @app.route('/api/orders', methods=['GET'])
 def list_orders_api():
-    
+    """Return list of all orders, or those matching stuatus query parameter"""
+    status = request.args.get("status")
+    try:
+        if status:
+            orders = list(order_tracker.list_orders_by_status(status).values())
+        else:
+            orders = list(order_tracker.list_all_orders().values())
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify(orders), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=True)
