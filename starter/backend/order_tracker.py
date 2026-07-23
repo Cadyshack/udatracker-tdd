@@ -40,7 +40,7 @@ class OrderTracker:
         if not isinstance(order_id, str) or not order_id:
             raise ValueError("order_id must be a non-empty string.")
         
-        return self.storage.get_order(order_id)
+        return self.storage.get_order(order_id) # returns None when absent
 
     def update_order_status(self, order_id: str, new_status: str):
         valid_status = ["pending", "processing", "shipped", "delivered", "cancelled"]
@@ -48,7 +48,7 @@ class OrderTracker:
             raise ValueError(f"Invalid status '{new_status}'. Must be one of: {', '.join(valid_status)}")
 
         if not isinstance(order_id, str) or not order_id:
-                    raise ValueError("order_id must be a non-empty string.")
+            raise ValueError("order_id must be a non-empty string.")
         
         order = self.storage.get_order(order_id)
         if order is None:
