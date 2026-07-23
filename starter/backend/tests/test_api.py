@@ -51,3 +51,61 @@ def test_list_orders_by_status_api_matching(client):
     assert response.status_code == 200
     assert len(response.json) == 1
     assert response.json[0]['order_id'] == "S001"
+
+def test_add_order_api_bad_quantity(client):
+    order_data = {
+         "order_id": "API002", "item_name": "API Table", "quantity": -1, "customer_id": "APICUST001"
+    }
+    response = client.post('/api/orders', json=order_data)
+    assert response.status_code == 400
+
+def test_add_order_api_duplicate_conflict(client):
+    order_data = {
+        "order_id": "DUP001", "item_name": "API Laptop", "quantity": 1, "customer_id": "APICUST001"
+    }
+    client.post('/api/orders', json=order_data)
+    response = client.post('/api/orders', json=order_data)
+    assert response.status_code == 409
+
+def test_add_order_api_missing_field(client):
+    order_data = {
+        "order_id": "API003", "item_name": "API Chair", "customer_id": "APICUST001"
+    }
+    response = client.post('/api/orders', json=order_data)
+    assert response.status_code == 400
+
+def test_add_order_api_blank_field(client):
+    order_data = {
+        "order_id": "API004", "item_name": "   ", "quantity": 1, "customer_id": "APICUST001"
+    }
+    response = client.post('/api/orders', json=order_data)
+    assert response.status_code == 400
+
+def test_add_order_api_invalid_status(client):
+    order_data = {
+        "order_id": "API005", "item_name": "API Desk", "quantity": 1, "customer_id": "APICUST001", "status": "brunch"
+    }
+    response = client.post('/api/orders', json=order_data)
+    assert response.status_code == 400
+
+def test_update_order_status_api_missing_body(client):
+    client.post('/api/orders', json={
+        "order_id": "UPD002", "item_name": "Test Item", "quantity": 1, "customer_id": "C1"
+    })
+    response = client.put('/api/orders/UPD002/status', json={})
+    assert response.status_code == 400
+
+def test_update_order_status_api_invalid_status(client):
+    client.post('/api/orders', json={
+        "order_id": "UPD003", "item_name": "Test Item", "quantity": 1, "customer_id": "C1"
+    })
+    response = client.put('/api/orders/UPD003/status', json={"new_status": "banana"})
+    assert response.status_code == 400
+
+def test_update_order_status_api_not_found(client):
+    response = client.put('/api/orders/NONEXISTENT/status', json={"new_status": "shipped"})
+    assert response.status_code == 404
+
+def test_list_orders_by_status_api_invalid_status(client):
+    response = client.get('/api/orders?status=banana')
+    assert response.status_code == 400
