@@ -22,7 +22,6 @@ def add_order_api():
     if not data or not all(k in data for k in ("order_id", "item_name", "quantity", "customer_id")):
         return jsonify({"error": "order_id, item_name, quantity, and customer_id are required"}), 400
 
-    # --- 409 Conflict: duplicate order_id ---
     try:
         order_tracker.add_order(
             order_id=data["order_id"],
@@ -32,7 +31,10 @@ def add_order_api():
             status=data.get("status", "pending"),
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 409
+        if "already exists" in str(e):
+            return jsonify({"error": str(e)}), 409 # 409 Conflict: duplicate order
+        else:
+            return jsonify({"error": str(e)}), 400 # bad quantity, missing/blank field, or invalid status
 
     # --- happy path: 201 Created ---
     created_order = order_tracker.get_order_by_id(data["order_id"])
