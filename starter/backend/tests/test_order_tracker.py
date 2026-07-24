@@ -4,6 +4,7 @@ from ..order_tracker import OrderTracker
 
 # --- Fixtures for Unit Tests ---
 
+
 @pytest.fixture
 def mock_storage():
     """
@@ -16,6 +17,7 @@ def mock_storage():
     # By default, mock get_all_orders to return an empty dict
     mock.get_all_orders.return_value = {}
     return mock
+
 
 @pytest.fixture
 def order_tracker(mock_storage):
@@ -33,7 +35,17 @@ def test_add_order_successfully(order_tracker, mock_storage):
     order_tracker.add_order("ORD001", "Laptop", 1, "CUST001")
 
     # We expect save_order to be called once
-    mock_storage.save_order.assert_called_once()
+    mock_storage.save_order.assert_called_once_with(
+        "ORD001",
+        {
+            "order_id": "ORD001",
+            "item_name": "Laptop",
+            "quantity": 1,
+            "customer_id": "CUST001",
+            "status": "pending"
+        }
+    )
+
 
 def test_add_order_raises_error_if_exists(order_tracker, mock_storage):
     """Tests that adding an order with a duplicate ID raises a ValueError."""
@@ -42,6 +54,7 @@ def test_add_order_raises_error_if_exists(order_tracker, mock_storage):
 
     with pytest.raises(ValueError, match="Order with ID 'ORD_EXISTING' already exists."):
         order_tracker.add_order("ORD_EXISTING", "New Item", 1, "CUST001")
+
 
 @pytest.mark.parametrize(
         "field_name",
@@ -57,11 +70,12 @@ def test_add_order_raises_error_if_missing_field(order_tracker, mock_storage, fi
         "customer_id": "CUST001"
     }
     order_data[field_name] = None
-    
+
     with pytest.raises(ValueError, match="Missing required field"):
         order_tracker.add_order(**order_data)
-    
+
     mock_storage.save_order.assert_not_called()
+
 
 def test_add_order_raises_error_if_invalid_status(order_tracker, mock_storage):
     """Test that only orders with valid status field can be added"""
@@ -76,6 +90,7 @@ def test_add_order_raises_error_if_invalid_status(order_tracker, mock_storage):
         order_tracker.add_order(**order_data)
 
     mock_storage.save_order.assert_not_called()
+
 
 @pytest.mark.parametrize(
         "field_name",
@@ -97,6 +112,7 @@ def test_add_order_raises_error_if_blank_string_field(order_tracker, mock_storag
 
     mock_storage.save_order.assert_not_called()
 
+
 @pytest.mark.parametrize(
         "quantity",
         [0, -1, "5", 1.5, True]
@@ -117,11 +133,10 @@ def test_add_order_raises_error_if_quantity_not_positive_integer(order_tracker, 
     mock_storage.save_order.assert_not_called()
 
 
-
 # ------ get_order_by_id tests ------
 def test_get_order_by_id_successfully(order_tracker, mock_storage):
     """Happy path test that getting an order that exists returns the proper order information"""
-    #Arrange
+    # Arrange
     order_data = {
         "order_id": "ORD003",
         "item_name": "Table",
@@ -131,24 +146,26 @@ def test_get_order_by_id_successfully(order_tracker, mock_storage):
     }
     mock_storage.get_order.return_value = order_data
 
-    #Act
+    # Act
     retrieved_order = order_tracker.get_order_by_id("ORD003")
 
-    #Assert
+    # Assert
     assert retrieved_order == order_data
     mock_storage.get_order.assert_called_once_with("ORD003")
 
+
 def test_get_order_by_id_returns_none_if_not_found(order_tracker, mock_storage):
     """Sad path test that returns None when trying to retrieve an order by an id that doesn't exist in the storage"""
-    #Arrange
+    # Arrange
     mock_storage.get_order.return_value = None
 
-    #Act
+    # Act
     retrieved_order = order_tracker.get_order_by_id("ORD009")
 
-    #Assert
+    # Assert
     assert retrieved_order is None
     mock_storage.get_order.assert_called_once_with("ORD009")
+
 
 @pytest.mark.parametrize(
         "order_id",
@@ -159,10 +176,11 @@ def test_get_order_by_id_raises_error_if_wrong_or_empty_id_field(order_tracker, 
     with pytest.raises(ValueError, match=r"order_id must be a non-empty string\."):
         order_tracker.get_order_by_id(order_id)
 
+
 # ------ update_order_status tests ------
 def test_update_order_status_successfully(order_tracker, mock_storage):
     """Test update order status successfully updates the status"""
-    #Arrange
+    # Arrange
     order_data_before_update = {
         "order_id": "ORD004",
         "item_name": "Pillow",
@@ -174,54 +192,72 @@ def test_update_order_status_successfully(order_tracker, mock_storage):
 
     order_data_after_update = {**order_data_before_update, "status": "processing"}
 
-    #Act
+    # Act
     order_tracker.update_order_status("ORD004", "processing")
 
-    #Assert
+    # Assert
     mock_storage.get_order.assert_called_once_with("ORD004")
     mock_storage.save_order.assert_called_once_with("ORD004", order_data_after_update)
+
 
 def test_update_order_status_raises_error_if_invalid_status_used(order_tracker):
     """Test that ValueError is raised when an invalid status is used for updating order status"""
     with pytest.raises(ValueError, match=r"Invalid status 'invalid_status'\. Must be one of: .*"):
         order_tracker.update_order_status("ORD004", "invalid_status")
 
+
 def test_update_order_status_raises_error_if_order_does_not_exist(order_tracker, mock_storage):
     """Test that ValueError is raised when trying to update the status of an order that doesn't exist in storage"""
-    #Arrange
+    # Arrange
     mock_storage.get_order.return_value = None
 
-    #Act/Assert
+    # Act/Assert
     with pytest.raises(ValueError, match=r"Order with ID 'ORD004' not found\."):
         order_tracker.update_order_status("ORD004", "shipped")
+
 
 def test_update_order_status_raises_error_using_empty_string(order_tracker, mock_storage):
     """Test that ValueError is raised when an empty string is used for order_id"""
     with pytest.raises(ValueError, match=r"order_id must be a non-empty string\."):
         order_tracker.update_order_status("", "shipped")
 
+
 # ------ list_all_orders tests ------
 @pytest.mark.parametrize(
         "order_data",
         [
             {
-                "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"},
-                "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
+                "ORD005": {
+                    "order_id": "ORD005",
+                    "item_name": "Chair",
+                    "quantity": 4,
+                    "customer_id": "CUST004",
+                    "status": "pending"
+                    },
+                "ORD006": {
+                    "order_id": "ORD006",
+                    "item_name": "Desk",
+                    "quantity": 1,
+                    "customer_id": "CUST005",
+                    "status": "shipped"
+                    }
             },
             {}
         ]
 )
 def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_data):
-    """Test that all orders are returned as a dict mapping order_id --> order dict, or an empty dict if no orders in storage"""
-    #Arrange
+    """Test that all orders are returned as a dict mapping order_id --> order dict,or an
+    empty dict if no orders in storage"""
+    # Arrange
     mock_storage.get_all_orders.return_value = order_data
 
-    #Act
+    # Act
     all_orders = order_tracker.list_all_orders()
 
-    #Assert
-    assert all_orders == order_data
+    # Assert
+    assert all_orders == list(order_data.values())
     mock_storage.get_all_orders.assert_called_once()
+
 
 # ------ list_orders_by_status ------
 @pytest.mark.parametrize(
@@ -229,59 +265,87 @@ def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_d
     [
         (
             "pending",
-            {
-                "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"}
-            }
+            [
+                {
+                "order_id": "ORD005",
+                "item_name": "Chair",
+                "quantity": 4,
+                "customer_id": "CUST004",
+                "status": "pending"
+                }
+            ]
         ),
         (
             "shipped",
-            {
-                "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
-            }
+            [
+                {
+                    "order_id": "ORD006",
+                    "item_name": "Desk",
+                    "quantity": 1,
+                    "customer_id": "CUST005",
+                    "status": "shipped"
+                }
+            ]
         ),
         (
             "processing",
-            {}
+            []
         )
     ]
 )
 def test_list_orders_by_status_successfully(order_tracker, mock_storage, status, expected_result):
     """Test list_orders_by_status successfully returns dict that includes only orders with specific status"""
-    #Arrange
+    # Arrange
     orders_data = {
-        "ORD005": {"order_id": "ORD005", "item_name": "Chair", "quantity": 4, "customer_id": "CUST004", "status": "pending"},
-        "ORD006": {"order_id": "ORD006", "item_name": "Desk", "quantity": 1, "customer_id": "CUST005", "status": "shipped"}
+        "ORD005": {
+            "order_id": "ORD005",
+            "item_name": "Chair",
+            "quantity": 4,
+            "customer_id": "CUST004",
+            "status": "pending"
+            },
+        "ORD006": {
+            "order_id": "ORD006",
+            "item_name": "Desk",
+            "quantity": 1,
+            "customer_id": "CUST005",
+            "status": "shipped"
+            }
     }
     mock_storage.get_all_orders.return_value = orders_data
 
-    #Act
+    # Act
     filtered_orders = order_tracker.list_orders_by_status(status)
 
-    #Assert
+    # Assert
     assert filtered_orders == expected_result
     mock_storage.get_all_orders.assert_called_once()
 
+
 def test_list_orders_by_status_empty_storage(order_tracker, mock_storage):
     """Test list_orders_by_status returns empty dict if storage is empty"""
-    #Arrange
+    # Arrange
     mock_storage.get_all_orders.return_value = {}
 
-    #Act
+    # Act
     filtered_orders = order_tracker.list_orders_by_status("pending")
 
-    #Assert
-    assert filtered_orders == {}
+    # Assert
+    assert filtered_orders == []
     mock_storage.get_all_orders.assert_called_once()
+
 
 def test_list_orders_by_status_raises_error_if_empty_string_for_status(order_tracker):
     """Test that ValueError is raised if we use an empty string for the status"""
     with pytest.raises(ValueError, match="Cannot use an empty string as status argument."):
         order_tracker.list_orders_by_status("")
 
+
 def test_list_orders_by_status_raises_error_if_invalid_status(order_tracker):
     """Test that a ValueError is raises if we use invalid status for filtering"""
     with pytest.raises(ValueError, match=r"Invalid status 'invalid_status'\. Must be one of:.*"):
-            order_tracker.list_orders_by_status("invalid_status")
+        order_tracker.list_orders_by_status("invalid_status")
+
 
 @pytest.mark.parametrize(
     "status",
