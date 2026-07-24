@@ -70,17 +70,17 @@ class OrderTracker:
         order["status"] = new_status
         self.storage.save_order(order_id, order)
 
-    def list_all_orders(self) -> dict:
-        """Return every order, keyed by order_id."""
-        return self.storage.get_all_orders()
+    def list_all_orders(self) -> list[dict]:
+        """Return every order, as a list of dictionaries"""
+        return list(self.storage.get_all_orders().values())
 
-    def list_orders_by_status(self, status: str) -> dict:
+    def list_orders_by_status(self, status: str) -> list[dict]:
         """Return orders matching status, raising ValueError on empty or invalid status."""
         if not isinstance(status, str) or not status.strip():
             raise ValueError("Cannot use an empty string as status argument.")
         elif status not in self.valid_status:
             raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(self.valid_status)}")
 
-        all_orders = self.storage.get_all_orders()
-        filtered_orders = {k: v.copy() for k, v in all_orders.items() if v["status"] == status}
+        all_orders = list(self.storage.get_all_orders().values())
+        filtered_orders = [order for order in all_orders if order["status"] == status]
         return filtered_orders

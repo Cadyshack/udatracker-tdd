@@ -83,9 +83,9 @@ def list_orders_api():
     status = request.args.get("status")
     try:
         if status:
-            orders = list(order_tracker.list_orders_by_status(status).values())
+            orders = order_tracker.list_orders_by_status(status)
         else:
-            orders = list(order_tracker.list_all_orders().values())
+            orders = order_tracker.list_all_orders()
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 

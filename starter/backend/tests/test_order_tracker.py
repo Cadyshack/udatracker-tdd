@@ -35,7 +35,16 @@ def test_add_order_successfully(order_tracker, mock_storage):
     order_tracker.add_order("ORD001", "Laptop", 1, "CUST001")
 
     # We expect save_order to be called once
-    mock_storage.save_order.assert_called_once()
+    mock_storage.save_order.assert_called_once_with(
+        "ORD001",
+        {
+            "order_id": "ORD001",
+            "item_name": "Laptop",
+            "quantity": 1,
+            "customer_id": "CUST001",
+            "status": "pending"
+        }
+    )
 
 
 def test_add_order_raises_error_if_exists(order_tracker, mock_storage):
@@ -230,7 +239,8 @@ def test_update_order_status_raises_error_using_empty_string(order_tracker, mock
                     "item_name": "Desk",
                     "quantity": 1,
                     "customer_id": "CUST005",
-                    "status": "shipped"}
+                    "status": "shipped"
+                    }
             },
             {}
         ]
@@ -245,7 +255,7 @@ def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_d
     all_orders = order_tracker.list_all_orders()
 
     # Assert
-    assert all_orders == order_data
+    assert all_orders == list(order_data.values())
     mock_storage.get_all_orders.assert_called_once()
 
 
@@ -255,31 +265,31 @@ def test_list_all_orders_returns_all_orders(order_tracker, mock_storage, order_d
     [
         (
             "pending",
-            {
-                "ORD005": {
-                    "order_id": "ORD005",
-                     "item_name": "Chair",
-                     "quantity": 4,
-                     "customer_id": "CUST004",
-                     "status": "pending"
-                     }
-            }
+            [
+                {
+                "order_id": "ORD005",
+                "item_name": "Chair",
+                "quantity": 4,
+                "customer_id": "CUST004",
+                "status": "pending"
+                }
+            ]
         ),
         (
             "shipped",
-            {
-                "ORD006": {
+            [
+                {
                     "order_id": "ORD006",
                     "item_name": "Desk",
                     "quantity": 1,
                     "customer_id": "CUST005",
                     "status": "shipped"
-                    }
-            }
+                }
+            ]
         ),
         (
             "processing",
-            {}
+            []
         )
     ]
 )
@@ -321,7 +331,7 @@ def test_list_orders_by_status_empty_storage(order_tracker, mock_storage):
     filtered_orders = order_tracker.list_orders_by_status("pending")
 
     # Assert
-    assert filtered_orders == {}
+    assert filtered_orders == []
     mock_storage.get_all_orders.assert_called_once()
 
 
