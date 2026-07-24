@@ -52,8 +52,8 @@ class OrderTracker:
         """Return the order for order_id, or None if it doesn't exist."""
         if not isinstance(order_id, str) or not order_id:
             raise ValueError("order_id must be a non-empty string.")
-        
-        return self.storage.get_order(order_id) # returns None when absent
+
+        return self.storage.get_order(order_id)  # returns None when absent
 
     def update_order_status(self, order_id: str, new_status: str) -> None:
         """Set an existing order's status, raising ValueError on invalid status or unknown order_id."""
@@ -62,14 +62,13 @@ class OrderTracker:
 
         if not isinstance(order_id, str) or not order_id:
             raise ValueError("order_id must be a non-empty string.")
-        
+
         order = self.storage.get_order(order_id)
         if order is None:
             raise ValueError(f"Order with ID '{order_id}' not found.")
-        
+
         order["status"] = new_status
         self.storage.save_order(order_id, order)
-
 
     def list_all_orders(self) -> dict:
         """Return every order, keyed by order_id."""
@@ -78,10 +77,10 @@ class OrderTracker:
     def list_orders_by_status(self, status: str) -> dict:
         """Return orders matching status, raising ValueError on empty or invalid status."""
         if not isinstance(status, str) or not status.strip():
-             raise ValueError("Cannot use an empty string as status argument.")
+            raise ValueError("Cannot use an empty string as status argument.")
         elif status not in self.valid_status:
             raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(self.valid_status)}")
-        
+
         all_orders = self.storage.get_all_orders()
         filtered_orders = {k: v.copy() for k, v in all_orders.items() if v["status"] == status}
         return filtered_orders

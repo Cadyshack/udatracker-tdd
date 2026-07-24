@@ -6,13 +6,16 @@ app = Flask(__name__, static_folder='../frontend')
 in_memory_storage = InMemoryStorage()
 order_tracker = OrderTracker(in_memory_storage)
 
+
 @app.route('/')
 def serve_index():
     return send_from_directory(app.static_folder, 'index.html')
 
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
+
 
 @app.route('/api/orders', methods=['POST'])
 def add_order_api():
@@ -32,13 +35,14 @@ def add_order_api():
         )
     except ValueError as e:
         if "already exists" in str(e):
-            return jsonify({"error": str(e)}), 409 # 409 Conflict: duplicate order
+            return jsonify({"error": str(e)}), 409  # 409 Conflict: duplicate order
         else:
-            return jsonify({"error": str(e)}), 400 # bad quantity, missing/blank field, or invalid status
+            return jsonify({"error": str(e)}), 400  # bad quantity, missing/blank field, or invalid status
 
     # --- happy path: 201 Created ---
     created_order = order_tracker.get_order_by_id(data["order_id"])
     return jsonify(created_order), 201
+
 
 @app.route('/api/orders/<string:order_id>', methods=['GET'])
 def get_order_api(order_id):
@@ -50,6 +54,7 @@ def get_order_api(order_id):
     # --- happy path: 200 OK response ---
     return jsonify(order), 200
 
+
 @app.route('/api/orders/<string:order_id>/status', methods=['PUT'])
 def update_order_status_api(order_id):
     """Update the status of an existing order."""
@@ -57,7 +62,7 @@ def update_order_status_api(order_id):
     # Check if missing request body or request body doesn't have "new_status" key
     if not data or "new_status" not in data:
         return jsonify({"error": "new_status is required"}), 400
-    
+
     new_status = data["new_status"]
 
     try:
@@ -69,7 +74,8 @@ def update_order_status_api(order_id):
             return jsonify({"error": str(e)}), 404
 
     updated_order = order_tracker.get_order_by_id(order_id)
-    return jsonify(updated_order), 200    
+    return jsonify(updated_order), 200
+
 
 @app.route('/api/orders', methods=['GET'])
 def list_orders_api():
@@ -84,6 +90,7 @@ def list_orders_api():
         return jsonify({"error": str(e)}), 400
 
     return jsonify(orders), 200
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8000, debug=True)
