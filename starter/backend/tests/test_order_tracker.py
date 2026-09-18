@@ -1,4 +1,5 @@
 import pytest
+import re
 from unittest.mock import Mock
 from ..order_tracker import OrderTracker
 
@@ -337,7 +338,7 @@ def test_list_orders_by_status_empty_storage(order_tracker, mock_storage):
 
 def test_list_orders_by_status_raises_error_if_empty_string_for_status(order_tracker):
     """Test that ValueError is raised if we use an empty string for the status"""
-    with pytest.raises(ValueError, match="Cannot use an empty string as status argument."):
+    with pytest.raises(ValueError, match=re.escape("Must use a valid string as status, '' was used instead.")):
         order_tracker.list_orders_by_status("")
 
 
@@ -353,5 +354,6 @@ def test_list_orders_by_status_raises_error_if_invalid_status(order_tracker):
 )
 def test_list_orders_by_status_raises_error_if_wrong_type(order_tracker, status):
     """Test that ValueError is raised when status is not a string"""
-    with pytest.raises(ValueError, match="Cannot use an empty string as status argument."):
+    expected_message = f"Must use a valid string as status, '{status}' was used instead."
+    with pytest.raises(ValueError, match=re.escape(expected_message)):
         order_tracker.list_orders_by_status(status)

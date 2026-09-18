@@ -77,7 +77,7 @@ class OrderTracker:
     def list_orders_by_status(self, status: str) -> list[dict]:
         """Return orders matching status, raising ValueError on empty or invalid status."""
         if not isinstance(status, str) or not status.strip():
-            raise ValueError("Cannot use an empty string as status argument.")
+            raise ValueError(f"Must use a valid string as status, '{status}' was used instead.")
         elif status not in self.valid_status:
             raise ValueError(f"Invalid status '{status}'. Must be one of: {', '.join(self.valid_status)}")
 
